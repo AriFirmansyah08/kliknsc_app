@@ -1,13 +1,28 @@
 import { DokumenStep } from "@/components/ui/DokumenStep";
 import { FormField } from "@/components/ui/FormControls";
-import { DAFTAR_STEPS, DOC_STEP, REVIEW_STEP } from "@/constants/daftarAgen";
+import {
+    DAFTAR_STEPS,
+    DOC_STEP,
+    REVIEW_STEP,
+    visibleFields,
+} from "@/constants/daftarAgen";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { useDaftarAgen } from "../../../hooks/useDaftarAgent";
+import { usePreventScreenCapture } from "expo-screen-capture";
+import {
+    ActivityIndicator,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+import { useDaftarAgent } from "../../../hooks/useDaftarAgent";
 
 const RED = "#E8311A";
 
 export default function DaftarAgen() {
+  usePreventScreenCapture(); // blokir screenshot dan rekam layar
+
   const {
     step,
     docStage,
@@ -18,7 +33,17 @@ export default function DaftarAgen() {
     goTo,
     submit,
     loading,
-  } = useDaftarAgen();
+    ready,
+    savedAt,
+  } = useDaftarAgent();
+
+  if (!ready) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={RED} />
+      </View>
+    );
+  }
 
   const isReview = step === REVIEW_STEP;
   const isDoc = step === DOC_STEP;
@@ -64,7 +89,7 @@ export default function DaftarAgen() {
                   <Text style={styles.ubah}>Ubah</Text>
                 </Pressable>
               </View>
-              {s.fields
+              {visibleFields(s, values)
                 .filter((f) => f.type !== "photo" && f.type !== "checkbox")
                 .map((f) => (
                   <View key={f.key} style={styles.row}>
@@ -85,7 +110,7 @@ export default function DaftarAgen() {
           <>
             <Text style={styles.title}>{current.title}</Text>
             <Text style={styles.desc}>{current.desc}</Text>
-            {current.fields.map((f) => (
+            {visibleFields(current, values).map((f) => (
               <FormField
                 key={f.key}
                 field={f}
@@ -96,15 +121,21 @@ export default function DaftarAgen() {
           </>
         )}
 
+        {savedAt && <Text style={styles.saved}>Draf tersimpan otomatis</Text>}
+
         {!isDoc && (
           <Pressable
             style={styles.primaryBtn}
             onPress={isReview ? submit : next}
             disabled={loading}
           >
-            <Text style={styles.primaryBtnText}>
-              {isReview ? "Kirim pendaftaran" : "Lanjut"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.primaryBtnText}>
+                {isReview ? "Kirim pendaftaran" : "Lanjut"}
+              </Text>
+            )}
           </Pressable>
         )}
       </ScrollView>
@@ -114,6 +145,12 @@ export default function DaftarAgen() {
 
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#F2F2F2", paddingTop: 60 },
+  center: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F2F2F2",
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -172,6 +209,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
 
+  saved: { fontSize: 12, color: "#666", textAlign: "center", marginTop: 8 },
   primaryBtn: {
     backgroundColor: RED,
     borderRadius: 30,

@@ -1,12 +1,11 @@
 import type { FieldDef } from "@/constants/daftarAgen";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import * as ImagePicker from "expo-image-picker";
-import { useState } from "react";
+import DateTimePicker, {
+    DateTimePickerAndroid,
+} from "@react-native-community/datetimepicker";
+import { useMemo, useState } from "react";
 import {
-    Alert,
     FlatList,
-    Image,
     Modal,
     Platform,
     Pressable,
@@ -18,7 +17,7 @@ import {
 
 const RED = "#E8311A";
 
-/* ---------- Dropdown ---------- */
+/* ---------- Dropdown (bottom sheet, tanpa shadow) ---------- */
 
 export function SelectField({
   value,
@@ -45,39 +44,39 @@ export function SelectField({
       <Modal
         visible={open}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setOpen(false)}
       >
-        <View style={styles.modalWrap}>
-          <Pressable style={{ flex: 1 }} onPress={() => setOpen(false)} />
-          <View style={styles.sheet}>
+        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
+          <Pressable style={styles.sheet} onPress={() => {}}>
+            <View style={styles.sheetHandle} />
             <FlatList
               data={options}
               keyExtractor={(o) => o}
-              renderItem={({ item }) => (
-                <Pressable
-                  style={styles.option}
-                  onPress={() => {
-                    onChange(item);
-                    setOpen(false);
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      item === value && { color: RED, fontWeight: "800" },
-                    ]}
+              renderItem={({ item }) => {
+                const active = item === value;
+                return (
+                  <Pressable
+                    style={styles.option}
+                    onPress={() => {
+                      onChange(item);
+                      setOpen(false);
+                    }}
                   >
-                    {item}
-                  </Text>
-                  {item === value && (
-                    <Ionicons name="checkmark" size={20} color={RED} />
-                  )}
-                </Pressable>
-              )}
+                    <Text
+                      style={[styles.optionText, active && styles.optionActive]}
+                    >
+                      {item}
+                    </Text>
+                    {active && (
+                      <Ionicons name="checkmark" size={20} color={RED} />
+                    )}
+                  </Pressable>
+                );
+              }}
             />
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </>
   );
@@ -96,6 +95,12 @@ const toDisplay = (iso: string) => {
   return `${d}-${m}-${y}`;
 };
 
+// parse "YYYY-MM-DD" sebagai tanggal lokal (new Date("1990-03-01") dibaca UTC)
+const fromIso = (iso: string) => {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d);
+};
+
 export function DateField({
   value,
   onChange,
@@ -103,34 +108,51 @@ export function DateField({
   value: string;
   onChange: (v: string) => void;
 }) {
-  const [show, setShow] = useState(false);
-  const date = value ? new Date(value) : new Date(1990, 0, 1);
+  const [showIos, setShowIos] = useState(false);
+  const date = useMemo(
+    () => (value ? fromIso(value) : new Date(1990, 0, 1)),
+    [value],
+  );
+
+  const open = () => {
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        value: date,
+        mode: "date",
+        maximumDate: new Date(),
+        onChange: (event, selected) => {
+          if (event.type === "set" && selected) onChange(toIso(selected));
+        },
+      });
+    } else {
+      setShowIos(true);
+    }
+  };
 
   return (
     <>
-      <Pressable style={styles.box} onPress={() => setShow(true)}>
+      <Pressable style={styles.box} onPress={open}>
         <Text style={value ? styles.value : styles.placeholder}>
           {value ? toDisplay(value) : "Pilih tanggal"}
         </Text>
         <Ionicons name="calendar-outline" size={20} color="#333" />
       </Pressable>
 
-      {show && (
-        <DateTimePicker
-          value={date}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          maximumDate={new Date()}
-          onChange={(_, selected) => {
-            if (Platform.OS === "android") setShow(false);
-            if (selected) onChange(toIso(selected));
-          }}
-        />
-      )}
-      {show && Platform.OS === "ios" && (
-        <Pressable onPress={() => setShow(false)} style={styles.doneBtn}>
-          <Text style={styles.doneText}>Selesai</Text>
-        </Pressable>
+      {showIos && Platform.OS === "ios" && (
+        <>
+          <DateTimePicker
+            value={date}
+            mode="date"
+            display="spinner"
+            maximumDate={new Date()}
+            onValueChange={(_, selected) => {
+              if (selected) onChange(toIso(selected));
+            }}
+          />
+          <Pressable onPress={() => setShowIos(false)} style={styles.doneBtn}>
+            <Text style={styles.doneText}>Selesai</Text>
+          </Pressable>
+        </>
       )}
     </>
   );
@@ -180,107 +202,59 @@ export function FormField({
   value: string;
   onChange: (v: string) => void;
 }) {
-  switch (field.type) {
-    case "checkbox":
-      return (
-        <Pressable
-          style={styles.checkRow}
-          onPress={() => onChange(value === "true" ? "" : "true")}
-        >
-          <Ionicons
-            name={value === "true" ? "checkbox" : "square-outline"}
-            size={22}
-            color={value === "true" ? RED : "#999"}
-          />
-          <Text style={styles.checkText}>{field.label}</Text>
-        </Pressable>
-      );
-
-    case "photo":
-      return (
-        <Labeled label={field.label}>
-          <Pressable
-            style={styles.photo}
-            onPress={async () => {
-              const perm = await ImagePicker.requestCameraPermissionsAsync();
-              if (!perm.granted) {
-                Alert.alert(
-                  "Izin kamera",
-                  "Izinkan akses kamera untuk mengambil foto.",
-                );
-                return;
-              }
-              const res = await ImagePicker.launchCameraAsync({
-                cameraType:
-                  field.key === "selfie"
-                    ? ImagePicker.CameraType.front
-                    : ImagePicker.CameraType.back,
-                quality: 0.7,
-                allowsEditing: false,
-              });
-              if (!res.canceled && res.assets[0]) {
-                onChange(res.assets[0].uri);
-              }
-            }}
-          >
-            {value ? (
-              <Image source={{ uri: value }} style={styles.preview} />
-            ) : (
-              <Ionicons name="camera-outline" size={28} color="#999" />
-            )}
-            <Text style={styles.hint}>
-              {value ? "Ketuk untuk foto ulang" : "Ketuk untuk ambil foto"}
-            </Text>
-          </Pressable>
-        </Labeled>
-      );
-
-    case "select":
-      return (
-        <Labeled label={field.label} hint={field.hint}>
-          <SelectField
-            value={value}
-            options={field.options ?? []}
-            placeholder={field.placeholder}
-            onChange={onChange}
-          />
-        </Labeled>
-      );
-
-    case "date":
-      return (
-        <Labeled label={field.label} hint={field.hint}>
-          <DateField value={value} onChange={onChange} />
-        </Labeled>
-      );
-
-    case "choice":
-      return (
-        <Labeled label={field.label} hint={field.hint}>
-          <ChoiceField
-            value={value}
-            options={field.options ?? []}
-            onChange={onChange}
-          />
-        </Labeled>
-      );
-
-    default:
-      return (
-        <Labeled label={field.label} hint={field.hint}>
-          <TextInput
-            style={[styles.input, field.type === "textarea" && styles.textarea]}
-            value={value}
-            onChangeText={onChange}
-            placeholder={field.placeholder}
-            placeholderTextColor="#999"
-            keyboardType={field.type === "number" ? "number-pad" : "default"}
-            multiline={field.type === "textarea"}
-            autoCapitalize="none"
-          />
-        </Labeled>
-      );
+  if (field.type === "select") {
+    return (
+      <Labeled label={field.label} hint={field.hint}>
+        <SelectField
+          value={value}
+          options={field.options ?? []}
+          placeholder={field.placeholder}
+          onChange={onChange}
+        />
+      </Labeled>
+    );
   }
+  if (field.type === "date") {
+    return (
+      <Labeled label={field.label} hint={field.hint}>
+        <DateField value={value} onChange={onChange} />
+      </Labeled>
+    );
+  }
+  if (field.type === "choice") {
+    return (
+      <Labeled label={field.label} hint={field.hint}>
+        <ChoiceField
+          value={value}
+          options={field.options ?? []}
+          onChange={onChange}
+        />
+      </Labeled>
+    );
+  }
+
+  return (
+    <Labeled label={field.label} hint={field.hint}>
+      <TextInput
+        style={[styles.input, field.type === "textarea" && styles.textarea]}
+        value={value}
+        onChangeText={(t) => onChange(field.lowercase ? t.toLowerCase() : t)}
+        placeholder={field.placeholder}
+        placeholderTextColor="#999"
+        keyboardType={
+          field.type === "number"
+            ? "number-pad"
+            : field.key === "email"
+              ? "email-address"
+              : "default"
+        }
+        multiline={field.type === "textarea"}
+        maxLength={field.maxLength}
+        autoCapitalize={field.lowercase ? "none" : "sentences"}
+        autoCorrect={false}
+      />
+    </Labeled>
+  );
 }
 
 function Labeled({
@@ -315,6 +289,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: "#111",
+    elevation: 0,
   },
   textarea: { minHeight: 90, textAlignVertical: "top" },
 
@@ -328,13 +303,14 @@ const styles = StyleSheet.create({
     borderColor: "#DDD",
     paddingHorizontal: 16,
     paddingVertical: 16,
+    elevation: 0,
   },
   value: { fontSize: 16, color: "#111" },
   placeholder: { fontSize: 16, color: "#999" },
 
-  modalWrap: {
+  backdrop: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.001)",
     justifyContent: "flex-end",
   },
   sheet: {
@@ -342,7 +318,19 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "60%",
-    paddingVertical: 8,
+    paddingBottom: 24,
+    elevation: 0,
+    shadowOpacity: 0,
+    borderTopWidth: 1,
+    borderColor: "#E5E5E5",
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "#D0D0D0",
+    marginVertical: 10,
   },
   option: {
     flexDirection: "row",
@@ -352,6 +340,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   optionText: { fontSize: 16, color: "#111" },
+  optionActive: { color: RED, fontWeight: "800" },
 
   doneBtn: {
     alignSelf: "flex-end",
@@ -374,24 +363,4 @@ const styles = StyleSheet.create({
   choiceActive: { backgroundColor: "#1F1F1F", borderColor: "#1F1F1F" },
   choiceText: { fontSize: 15, fontWeight: "700", color: "#111" },
   choiceTextActive: { color: "#fff" },
-
-  checkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 16,
-  },
-  checkText: { flex: 1, fontSize: 14, color: "#111", lineHeight: 20 },
-
-  photo: {
-    height: 120,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#DDD",
-    backgroundColor: "#fff",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-  },
-  preview: { width: "100%", height: 80, borderRadius: 10 },
 });

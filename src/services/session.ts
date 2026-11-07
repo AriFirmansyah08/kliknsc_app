@@ -1,3 +1,5 @@
+import { DRAFT_KEY } from "@/constants/daftarAgen";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 
 const TOKEN_KEY = "auth_token";
@@ -29,4 +31,5 @@ export async function getSession(): Promise<{
 export async function clearSession() {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
   await SecureStore.deleteItemAsync(EXPIRES_KEY);
+  await AsyncStorage.removeItem(DRAFT_KEY); // draf ikut terhapus saat logout
 }

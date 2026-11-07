@@ -7,6 +7,8 @@ export type FieldType =
   | "choice"
   | "checkbox"
   | "photo";
+export type FormValues = Record<string, string>;
+export const DRAFT_KEY = "draft_daftar_agen";
 
 export type FieldDef = {
   key: string;
@@ -16,6 +18,10 @@ export type FieldDef = {
   required?: boolean;
   placeholder?: string;
   hint?: string;
+  maxLength?: number;
+  lowercase?: boolean;
+  showIf?: (v: FormValues) => boolean;
+  validate?: (v: string) => string | null;
 };
 
 export type StepDef = {
@@ -24,9 +30,30 @@ export type StepDef = {
   fields: FieldDef[];
 };
 
-export type FormValues = Record<string, string>;
-
 export const emptyValues: FormValues = {};
+
+/* ---------- aturan validasi ---------- */
+
+const nikRule = (v: string) =>
+  /^\d{15,17}$/.test(v) ? null : "NIK harus 15 sampai 17 digit angka";
+
+const emailRule = (v: string) =>
+  /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(v)
+    ? null
+    : "Format email tidak valid";
+
+const alamatRule = (v: string) =>
+  v.trim().split(/\s+/).filter(Boolean).length >= 5
+    ? null
+    : "Alamat minimal 5 kata";
+
+const rt3Rule = (label: string) => (v: string) =>
+  /^\d{3}$/.test(v) ? null : `${label} harus 3 angka`;
+
+const npwpRule = (v: string) =>
+  /^\d{15}$/.test(v) ? null : "Nomor NPWP harus 15 digit angka";
+
+/* ---------- langkah ---------- */
 
 export const DAFTAR_STEPS: StepDef[] = [
   {
@@ -47,7 +74,14 @@ export const DAFTAR_STEPS: StepDef[] = [
         required: true,
         hint: "Tanyakan NIP ke KBA kamu.",
       },
-      { key: "nik", label: "NIK", type: "number", required: true },
+      {
+        key: "nik",
+        label: "NIK",
+        type: "number",
+        required: true,
+        maxLength: 17,
+        validate: nikRule,
+      },
     ],
   },
   {
@@ -107,6 +141,8 @@ export const DAFTAR_STEPS: StepDef[] = [
         label: "Email (opsional)",
         type: "text",
         placeholder: "nama@email.com",
+        lowercase: true,
+        validate: emailRule,
       },
     ],
   },
@@ -119,9 +155,24 @@ export const DAFTAR_STEPS: StepDef[] = [
         label: "Alamat lengkap",
         type: "textarea",
         required: true,
+        validate: alamatRule,
       },
-      { key: "rt", label: "RT", type: "number", required: true },
-      { key: "rw", label: "RW", type: "number", required: true },
+      {
+        key: "rt",
+        label: "RT",
+        type: "number",
+        required: true,
+        maxLength: 3,
+        validate: rt3Rule("RT"),
+      },
+      {
+        key: "rw",
+        label: "RW",
+        type: "number",
+        required: true,
+        maxLength: 3,
+        validate: rt3Rule("RW"),
+      },
       {
         key: "provinsi",
         label: "Provinsi",
@@ -169,6 +220,15 @@ export const DAFTAR_STEPS: StepDef[] = [
         type: "choice",
         options: ["Ya", "Tidak"],
         required: true,
+      },
+      {
+        key: "nomorNpwp",
+        label: "Nomor NPWP",
+        type: "number",
+        required: true,
+        maxLength: 15,
+        validate: npwpRule,
+        showIf: (v) => v.punyaNpwp === "Ya",
       },
       {
         key: "bank",
@@ -221,6 +281,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         label: "Sebulan pernah jual berapa unit?",
         type: "number",
         required: true,
+        showIf: (v) => v.pernahOtomotif === "Ya",
       },
       {
         key: "tahuDari",
@@ -237,8 +298,7 @@ export const DAFTAR_STEPS: StepDef[] = [
     fields: [
       {
         key: "consent",
-        label:
-          "Saya setuju KlikNSC memproses foto KTP dan selfie saya sesuai Kebijakan Privasi.",
+        label: "Persetujuan",
         type: "checkbox",
         required: true,
       },
@@ -250,3 +310,7 @@ export const DAFTAR_STEPS: StepDef[] = [
 
 export const DOC_STEP = DAFTAR_STEPS.length - 1;
 export const REVIEW_STEP = DAFTAR_STEPS.length;
+
+/** Field yang tampil sesuai isian lain (mis. NPWP hanya jika punya). */
+export const visibleFields = (step: StepDef, values: FormValues) =>
+  step.fields.filter((f) => !f.showIf || f.showIf(values));
