@@ -18,6 +18,12 @@ export type AgentInfo = {
   submitted_at: string | null;
 };
 
+export const submitAgent = (values: Record<string, string>) =>
+  authRequest("/agent/submit", {
+    method: "POST",
+    body: values,
+  });
+
 export type AgentStatusResponse = {
   status: AgentStatus;
   user: { name: string; phone: string };
@@ -26,9 +32,6 @@ export type AgentStatusResponse = {
 
 export const getAgentStatus = () =>
   authRequest("/agent/status") as Promise<AgentStatusResponse>;
-
-export const submitAgent = (nama_lengkap: string) =>
-  authRequest("/agent/submit", { method: "POST", body: { nama_lengkap } });
 
 export type PengajuanItem = {
   id: number;

@@ -15,8 +15,7 @@ import {
 import {
     AgentInfo,
     AgentStatusResponse,
-    getAgentStatus,
-    submitAgent,
+    getAgentStatus
 } from "../../../services/agent";
 
 const RED = "#E8311A";
@@ -87,26 +86,7 @@ export default function Home() {
     .join("")
     .toUpperCase();
 
-  const handleDaftar = () => {
-    Alert.alert(
-      "Daftar jadi agen",
-      "Kirim pendaftaran sekarang? Data diri lengkap diisi nanti.",
-      [
-        { text: "Batal", style: "cancel" },
-        {
-          text: "Kirim",
-          onPress: async () => {
-            try {
-              await submitAgent(name);
-              load();
-            } catch (e: any) {
-              Alert.alert("Gagal", e.message ?? "Terjadi kesalahan");
-            }
-          },
-        },
-      ],
-    );
-  };
+  const handleDaftar = () => router.push("/agent/daftar");
 
   return (
     <ScrollView
