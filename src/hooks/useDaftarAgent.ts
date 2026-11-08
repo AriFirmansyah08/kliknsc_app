@@ -7,7 +7,7 @@ import {
     emptyValues,
     visibleFields,
 } from "@/constants/daftarAgen";
-import { submitAgent } from "@/services/agent";
+import { submitAgent, submitAppAgent, uploadDokumenAgent } from "@/services/agent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -117,29 +117,29 @@ export function useDaftarAgent() {
     setStep(i);
   };
 
-  const submit = async () => {
-    const payload: FormValues = {};
-    DAFTAR_STEPS.forEach((s) =>
-      visibleFields(s, values).forEach((f) => {
-        payload[f.key] = values[f.key] ?? "";
-      }),
-    );
+const submit = async () => {
+  // kirim field yang tampil, kecuali foto (foto dikirim terpisah)
+  const payload: FormValues = {};
+  DAFTAR_STEPS.forEach((s) =>
+    visibleFields(s, values).forEach((f) => {
+      if (f.type !== "photo") payload[f.key] = values[f.key] ?? "";
+    }),
+  );
 
-    try {
-      setLoading(true);
-      await submitAgent(payload);
-      await AsyncStorage.removeItem(DRAFT_KEY);
-      Alert.alert(
-        "Berhasil",
-        "Pendaftaran dikirim, tunggu verifikasi SPV KBA.",
-      );
-      router.replace("/home");
-    } catch (e: any) {
-      Alert.alert("Gagal", e.message ?? "Terjadi kesalahan");
-    } finally {
-      setLoading(false);
-    }
-  };
+  try {
+    setLoading(true);
+    await submitAppAgent(payload);
+    await uploadDokumenAgent(values.fotoKtp ?? "", values.selfie ?? "");
+    await submitAgent(payload.namaLengkap);
+    await AsyncStorage.removeItem(DRAFT_KEY);
+    Alert.alert("Berhasil", "Pendaftaran dikirim, tunggu verifikasi SPV KBA.");
+    router.replace("/home");
+  } catch (e: any) {
+    Alert.alert("Gagal", e.message ?? "Terjadi kesalahan");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return {
     step,

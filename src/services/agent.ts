@@ -1,3 +1,4 @@
+import * as FileSystem from "expo-file-system/legacy";
 import { authRequest } from "./auth";
 
 export type AgentStatus =
@@ -18,8 +19,16 @@ export type AgentInfo = {
   submitted_at: string | null;
 };
 
-export const submitAgent = (values: Record<string, string>) =>
+// status pending di tabel agents (endpoint lama)
+export const submitAgent = (namaLengkap: string) =>
   authRequest("/agent/submit", {
+    method: "POST",
+    body: { nama_lengkap: namaLengkap },
+  });
+
+// data lengkap ke tabel agent
+export const submitAppAgent = (values: Record<string, string>) =>
+  authRequest("/agent/submit_app", {
     method: "POST",
     body: values,
   });
@@ -48,6 +57,21 @@ export type PengajuanPage = {
   current_page: number;
   last_page: number;
   total: number;
+};
+
+// foto dikirim sebagai base64
+export const uploadDokumenAgent = async (ktpUri: string, selfieUri: string) => {
+  const ktp = await FileSystem.readAsStringAsync(ktpUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  const selfie = await FileSystem.readAsStringAsync(selfieUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  return authRequest("/agent/dokumen", {
+    method: "POST",
+    body: { ktp, selfie },
+  });
 };
 
 export const getPengajuan = (page: number) =>
