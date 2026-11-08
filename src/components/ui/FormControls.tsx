@@ -1,12 +1,11 @@
-import type { FieldDef } from "@/constants/daftarAgen";
+import type { FieldDef, FormValues } from "@/constants/daftarAgen";
+import { API_URL } from "@/services/auth";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
     DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-    FlatList,
-    Modal,
     Platform,
     Pressable,
     StyleSheet,
@@ -14,10 +13,11 @@ import {
     TextInput,
     View,
 } from "react-native";
+import { Option, PickerSheet } from "./PickerSheet";
 
 const RED = "#E8311A";
 
-/* ---------- Dropdown (bottom sheet, tanpa shadow) ---------- */
+/* ---------- Dropdown statis ---------- */
 
 export function SelectField({
   value,
@@ -40,44 +40,74 @@ export function SelectField({
         </Text>
         <Ionicons name="chevron-down" size={20} color="#333" />
       </Pressable>
-
-      <Modal
+      <PickerSheet
         visible={open}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpen(false)}
+        options={options.map((o) => ({ value: o, label: o }))}
+        loading={false}
+        selected={value}
+        onClose={() => setOpen(false)}
+        onPick={(o) => {
+          onChange(o.value);
+          setOpen(false);
+        }}
+      />
+    </>
+  );
+}
+
+/* ---------- Dropdown dari API ---------- */
+
+export function RemoteSelectField({
+  value,
+  path,
+  param,
+  parentKode,
+  onPick,
+}: {
+  value: string;
+  path: string;
+  param?: string;
+  parentKode?: string;
+  onPick: (o: Option) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [options, setOptions] = useState<Option[]>([]);
+  const [loading, setLoading] = useState(false);
+  const disabled = !!param && !parentKode;
+
+  useEffect(() => {
+    if (!open || disabled) return;
+    const qs = param ? `?${param}=${encodeURIComponent(parentKode ?? "")}` : "";
+    setLoading(true);
+    fetch(`${API_URL}${path}${qs}`)
+      .then((r) => r.json())
+      .then((data: Option[]) => setOptions(data))
+      .catch(() => setOptions([]))
+      .finally(() => setLoading(false));
+  }, [open, path, param, parentKode, disabled]);
+
+  return (
+    <>
+      <Pressable
+        style={[styles.box, disabled && styles.disabled]}
+        onPress={() => !disabled && setOpen(true)}
       >
-        <Pressable style={styles.backdrop} onPress={() => setOpen(false)}>
-          <Pressable style={styles.sheet} onPress={() => {}}>
-            <View style={styles.sheetHandle} />
-            <FlatList
-              data={options}
-              keyExtractor={(o) => o}
-              renderItem={({ item }) => {
-                const active = item === value;
-                return (
-                  <Pressable
-                    style={styles.option}
-                    onPress={() => {
-                      onChange(item);
-                      setOpen(false);
-                    }}
-                  >
-                    <Text
-                      style={[styles.optionText, active && styles.optionActive]}
-                    >
-                      {item}
-                    </Text>
-                    {active && (
-                      <Ionicons name="checkmark" size={20} color={RED} />
-                    )}
-                  </Pressable>
-                );
-              }}
-            />
-          </Pressable>
-        </Pressable>
-      </Modal>
+        <Text style={value ? styles.value : styles.placeholder}>
+          {value || (disabled ? "Pilih wilayah induk dulu" : "Pilih")}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color="#333" />
+      </Pressable>
+      <PickerSheet
+        visible={open}
+        options={options}
+        loading={loading}
+        selected={value}
+        onClose={() => setOpen(false)}
+        onPick={(o) => {
+          setOpen(false);
+          onPick(o);
+        }}
+      />
     </>
   );
 }
@@ -95,7 +125,7 @@ const toDisplay = (iso: string) => {
   return `${d}-${m}-${y}`;
 };
 
-// parse "YYYY-MM-DD" sebagai tanggal lokal (new Date("1990-03-01") dibaca UTC)
+// parse "YYYY-MM-DD" sebagai tanggal lokal
 const fromIso = (iso: string) => {
   const [y, m, d] = iso.split("-").map(Number);
   return new Date(y, m - 1, d);
@@ -196,12 +226,33 @@ export function ChoiceField({
 export function FormField({
   field,
   value,
+  values,
   onChange,
+  onPick,
 }: {
   field: FieldDef;
   value: string;
+  values: FormValues;
   onChange: (v: string) => void;
+  onPick: (o: Option) => void;
 }) {
+  if (field.type === "remote" && field.source) {
+    const parentKode = field.source.parentKey
+      ? values[field.source.parentKey]
+      : undefined;
+    return (
+      <Labeled label={field.label} hint={field.hint}>
+        <RemoteSelectField
+          value={value}
+          path={field.source.path}
+          param={field.source.param}
+          parentKode={parentKode}
+          onPick={onPick}
+        />
+      </Labeled>
+    );
+  }
+
   if (field.type === "select") {
     return (
       <Labeled label={field.label} hint={field.hint}>
@@ -214,6 +265,7 @@ export function FormField({
       </Labeled>
     );
   }
+
   if (field.type === "date") {
     return (
       <Labeled label={field.label} hint={field.hint}>
@@ -221,6 +273,7 @@ export function FormField({
       </Labeled>
     );
   }
+
   if (field.type === "choice") {
     return (
       <Labeled label={field.label} hint={field.hint}>
@@ -289,7 +342,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     fontSize: 16,
     color: "#111",
-    elevation: 0,
   },
   textarea: { minHeight: 90, textAlignVertical: "top" },
 
@@ -303,44 +355,10 @@ const styles = StyleSheet.create({
     borderColor: "#DDD",
     paddingHorizontal: 16,
     paddingVertical: 16,
-    elevation: 0,
   },
   value: { fontSize: 16, color: "#111" },
   placeholder: { fontSize: 16, color: "#999" },
-
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.001)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: "60%",
-    paddingBottom: 24,
-    elevation: 0,
-    shadowOpacity: 0,
-    borderTopWidth: 1,
-    borderColor: "#E5E5E5",
-  },
-  sheetHandle: {
-    alignSelf: "center",
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "#D0D0D0",
-    marginVertical: 10,
-  },
-  option: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  optionText: { fontSize: 16, color: "#111" },
-  optionActive: { color: RED, fontWeight: "800" },
+  disabled: { opacity: 0.5 },
 
   doneBtn: {
     alignSelf: "flex-end",

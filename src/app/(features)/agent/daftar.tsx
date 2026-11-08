@@ -1,5 +1,6 @@
 import { DokumenStep } from "@/components/ui/DokumenStep";
 import { FormField } from "@/components/ui/FormControls";
+
 import {
     DAFTAR_STEPS,
     DOC_STEP,
@@ -8,6 +9,7 @@ import {
 } from "@/constants/daftarAgen";
 import { Ionicons } from "@expo/vector-icons";
 import { usePreventScreenCapture } from "expo-screen-capture";
+import { PickerSheet } from "../../../components/ui/PickerSheet";
 import {
     ActivityIndicator,
     Pressable,
@@ -35,6 +37,7 @@ export default function DaftarAgen() {
     loading,
     ready,
     savedAt,
+    pickRemote,
   } = useDaftarAgent();
 
   if (!ready) {
@@ -115,7 +118,9 @@ export default function DaftarAgen() {
                 key={f.key}
                 field={f}
                 value={values[f.key] ?? ""}
+                values={values}
                 onChange={(v) => setField(f.key, v)}
+                onPick={(item) => pickRemote(f.key, item)}
               />
             ))}
           </>

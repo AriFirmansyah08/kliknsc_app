@@ -3,10 +3,12 @@ export type FieldType =
   | "number"
   | "textarea"
   | "select"
+  | "remote"
   | "date"
   | "choice"
   | "checkbox"
   | "photo";
+
 export type FormValues = Record<string, string>;
 export const DRAFT_KEY = "draft_daftar_agen";
 
@@ -22,6 +24,7 @@ export type FieldDef = {
   lowercase?: boolean;
   showIf?: (v: FormValues) => boolean;
   validate?: (v: string) => string | null;
+  source?: { path: string; param?: string; parentKey?: string };
 };
 
 export type StepDef = {
@@ -176,30 +179,42 @@ export const DAFTAR_STEPS: StepDef[] = [
       {
         key: "provinsi",
         label: "Provinsi",
-        type: "select",
-        options: ["Jawa Barat", "DKI Jakarta", "Jawa Tengah", "Jawa Timur"],
+        type: "remote",
         required: true,
+        source: { path: "/wilayah/provinsi" },
       },
       {
         key: "kota",
         label: "Kota / kabupaten",
-        type: "select",
-        options: ["Kota Bandung", "Kabupaten Bandung"],
+        type: "remote",
         required: true,
+        source: {
+          path: "/wilayah/kota",
+          param: "provinsi",
+          parentKey: "provinsiKode",
+        },
       },
       {
         key: "kecamatan",
         label: "Kecamatan",
-        type: "select",
-        options: ["Coblong", "Cicendo", "Sukajadi"],
+        type: "remote",
         required: true,
+        source: {
+          path: "/wilayah/kecamatan",
+          param: "kota",
+          parentKey: "kotaKode",
+        },
       },
       {
         key: "kelurahan",
         label: "Kelurahan / desa",
-        type: "select",
-        options: ["Dago", "Lebakgede", "Cipaganti"],
+        type: "remote",
         required: true,
+        source: {
+          path: "/wilayah/kelurahan",
+          param: "kecamatan",
+          parentKey: "kecamatanKode",
+        },
       },
       {
         key: "kodePos",
@@ -233,9 +248,9 @@ export const DAFTAR_STEPS: StepDef[] = [
       {
         key: "bank",
         label: "Bank",
-        type: "select",
-        options: ["BRI", "BCA", "Mandiri", "BNI"],
+        type: "remote",
         required: true,
+        source: { path: "/dtdiri/bank" },
       },
       {
         key: "nomorRekening",
@@ -258,16 +273,20 @@ export const DAFTAR_STEPS: StepDef[] = [
       {
         key: "pekerjaan",
         label: "Pekerjaan",
-        type: "select",
-        options: ["Wiraswasta", "Karyawan", "Pelajar", "Lainnya"],
+        type: "remote",
         required: true,
+        source: { path: "/dtdiri/pekerjaan" },
       },
       {
         key: "subPekerjaan",
         label: "Sub pekerjaan",
-        type: "select",
-        options: ["Pedagang", "Jasa", "Lainnya"],
+        type: "remote",
         required: true,
+        source: {
+          path: "/dtdiri/subpekerjaan",
+          param: "pekerjaan",
+          parentKey: "pekerjaanKode",
+        },
       },
       {
         key: "pernahOtomotif",
