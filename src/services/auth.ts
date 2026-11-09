@@ -48,7 +48,6 @@ export async function authRequest(
     body: options.body ? JSON.stringify(options.body) : undefined,
   });
 
-  // Ditolak server (token habis atau dicabut)
   if (res.status === 401) {
     await forceLogout();
     throw new Error(SESSION_EXPIRED);
@@ -123,6 +122,13 @@ export async function verifikasiAgen(
   );
   if (data.token) await saveSession(data.token, data.expires_in);
   return data;
+}
+
+export function changePassword(currentPassword: string, password: string) {
+  return authRequest("/password/change", {
+    method: "POST",
+    body: { current_password: currentPassword, password },
+  });
 }
 
 export async function logout() {

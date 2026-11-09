@@ -8,12 +8,16 @@ import {
   Pressable,
   RefreshControl,
   ScrollView,
-  StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
+import {
+  CS_WA,
+  DARK_RED,
+  RED,
+  styles,
+} from "../../../components/app.style/profile.style";
 import { AgentStatusResponse, getAgentStatus } from "../../../services/agent";
-import { DARK_RED, styles, RED, CS_WA } from "../../../components/app.style/profile.style";
 import { logout } from "../../../services/auth";
 
 const openWhatsApp = (phone: string, text?: string) => {
@@ -152,7 +156,7 @@ export default function Profil() {
           icon="lock-closed-outline"
           title="Keamanan"
           sub="Ganti password"
-          onPress={() => Alert.alert("Segera hadir")}
+          onPress={() => router.push("/ganti-password")}
         />
         <View style={styles.divider} />
         <MenuRow
