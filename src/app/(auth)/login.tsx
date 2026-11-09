@@ -117,7 +117,7 @@ export default function LoginScreen() {
             <Text style={styles.link}>Lupa password?</Text>
           </Pressable>
         </Link>
-        <Link href="/login" style={[styles.link, { marginTop: 16 }]}>
+        <Link href="/lupa-nomor" style={[styles.link, { marginTop: 10 }]}>
           Lupa nomor / nomor tidak aktif?
         </Link>
 
