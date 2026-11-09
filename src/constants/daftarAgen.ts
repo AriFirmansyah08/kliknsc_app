@@ -67,7 +67,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         key: "jenisAgen",
         label: "Jenis agen",
         type: "select",
-        options: ["Perorangan"],
+        options: ["PERORANGAN", "CORPORATE"],
         required: true,
       },
       {
@@ -108,14 +108,14 @@ export const DAFTAR_STEPS: StepDef[] = [
         key: "jenisKelamin",
         label: "Jenis kelamin",
         type: "choice",
-        options: ["Laki-laki", "Perempuan"],
+        options: ["LAKI-LAKI", "PEREMPUAN"],
         required: true,
       },
       {
         key: "golDarah",
         label: "Golongan darah",
         type: "select",
-        options: ["O", "A", "B", "AB"],
+        options: ["O", "A", "B", "AB", "TIDAK TAHU"],
         required: true,
       },
       {
@@ -129,14 +129,22 @@ export const DAFTAR_STEPS: StepDef[] = [
         key: "agama",
         label: "Agama",
         type: "select",
-        options: ["Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu"],
+        options: [
+          "ISLAM",
+          "KRISTEN",
+          "KATOLIK",
+          "HINDU",
+          "BUDHA",
+          "KONGHUCU",
+          "LAIN - LAIN",
+        ],
         required: true,
       },
       {
         key: "statusKawin",
         label: "Status perkawinan",
         type: "select",
-        options: ["Belum kawin", "Kawin", "Cerai hidup", "Cerai mati"],
+        options: ["Belum kawin", "Kawin", "Cerai hidup", "DUDA", "JANDA"],
         required: true,
       },
       {
@@ -330,6 +338,5 @@ export const DAFTAR_STEPS: StepDef[] = [
 export const DOC_STEP = DAFTAR_STEPS.length - 1;
 export const REVIEW_STEP = DAFTAR_STEPS.length;
 
-/** Field yang tampil sesuai isian lain (mis. NPWP hanya jika punya). */
 export const visibleFields = (step: StepDef, values: FormValues) =>
   step.fields.filter((f) => !f.showIf || f.showIf(values));

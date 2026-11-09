@@ -40,7 +40,7 @@ export default function OtpScreen() {
       } else {
         await verifyOtp(phone, otp, mode);
         router.push({
-          pathname: "/reset-password" as any,
+          pathname: "/reset-password",
           params: { phone, otp },
         });
       }

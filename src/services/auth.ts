@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { clearSession, getSession, saveSession } from "./session";
-export const API_URL = "http://192.168.1.13:8000/api";
-// export const API_URL = "http://10.117.190.84:8000/api";
+//export const API_URL = "http://192.168.1.13:8000/api";
+export const API_URL = "http://10.117.190.84:8000/api";
 // export const API_URL = "http://172.26.86.65:8000/api";
 
 const SESSION_EXPIRED = "SESSION_EXPIRED";

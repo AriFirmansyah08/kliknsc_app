@@ -1,5 +1,4 @@
 import { StyleSheet } from "react-native";
-import { Brand } from "@/constants/theme";
 
 export const RED = "#C41E0A";
 
