@@ -59,7 +59,7 @@ export default function RegisterScreen() {
               text: "OK",
               onPress: () =>
                 router.push({
-                  pathname: "/",
+                  pathname: "/verifikasi-agen",
                   params: { phone, password },
                 }),
             },

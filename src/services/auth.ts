@@ -6,7 +6,6 @@ export const API_URL = "http://10.117.190.84:8000/api";
 
 const SESSION_EXPIRED = "SESSION_EXPIRED";
 
-// Dipakai di catch. Kalau true, jangan tampilkan alert.
 export function isSessionExpired(e: unknown) {
   return (e as Error)?.message === SESSION_EXPIRED;
 }
@@ -23,7 +22,11 @@ async function post(path: string, body: object, fallbackError: string) {
     body: JSON.stringify(body),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data.message ?? fallbackError);
+  if (!res.ok) {
+    const err: any = new Error(data.message ?? fallbackError);
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 

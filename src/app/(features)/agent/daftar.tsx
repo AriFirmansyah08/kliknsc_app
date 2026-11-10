@@ -9,7 +9,6 @@ import {
 } from "@/constants/daftarAgen";
 import { Ionicons } from "@expo/vector-icons";
 import { usePreventScreenCapture } from "expo-screen-capture";
-import { PickerSheet } from "../../../components/ui/PickerSheet";
 import {
     ActivityIndicator,
     Pressable,
@@ -126,7 +125,7 @@ export default function DaftarAgen() {
           </>
         )}
 
-        {savedAt && <Text style={styles.saved}>Draf tersimpan otomatis</Text>}
+        {savedAt && <Text style={styles.saved}></Text>}
 
         {!isDoc && (
           <Pressable

@@ -39,6 +39,12 @@ export default function VerifikasiAgen() {
         },
       ]);
     } catch (err: any) {
+      if (err.status === 429) {
+        Alert.alert("Percobaan habis", err.message, [
+          { text: "OK", onPress: () => router.replace("/(auth)/login") },
+        ]);
+        return;
+      }
       Alert.alert("Verifikasi gagal", err.message ?? "Terjadi kesalahan");
     } finally {
       setLoading(false);
