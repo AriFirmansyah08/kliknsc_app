@@ -15,7 +15,7 @@ import {
 import {
     AgentInfo,
     AgentStatusResponse,
-    getAgentStatus
+    getAgentStatus,
 } from "../../../services/agent";
 
 const RED = "#E8311A";
@@ -117,11 +117,9 @@ export default function Home() {
         </View>
       </View>
 
-      {(status === "none" || status === "none_draft") && (
-        <NoneView draft={status === "none_draft"} onDaftar={handleDaftar} />
-      )}
+      {status === "none" && <NoneView onDaftar={handleDaftar} />}
       {status === "pending" && <PendingView agent={agent} />}
-      {status === "active" && agent && <ActiveView agent={agent} />}
+      {status === "active" && <ActiveView agent={agent} name={name} />}
       {status === "inactive_closing" && (
         <StatusCard
           icon="time-outline"
@@ -153,15 +151,9 @@ export default function Home() {
   );
 }
 
-/* ---------- Status: none / none_draft ---------- */
+/* ---------- Status: none ---------- */
 
-function NoneView({
-  draft,
-  onDaftar,
-}: {
-  draft: boolean;
-  onDaftar: () => void;
-}) {
+function NoneView({ onDaftar }: { onDaftar: () => void }) {
   const benefits = [
     {
       t: "Komisi tiap kredit cair",
@@ -190,9 +182,7 @@ function NoneView({
           Penghasilan tambahan dari setiap kredit yang cair.
         </Text>
         <Pressable style={styles.promoBtn} onPress={onDaftar}>
-          <Text style={styles.promoBtnText}>
-            {draft ? "Lanjutkan pendaftaran" : "Daftar jadi agen"}
-          </Text>
+          <Text style={styles.promoBtnText}>Daftar jadi agen</Text>
         </Pressable>
       </View>
 
@@ -227,9 +217,7 @@ function NoneView({
       </View>
 
       <Pressable style={styles.primaryBtn} onPress={onDaftar}>
-        <Text style={styles.primaryBtnText}>
-          {draft ? "Lanjutkan pendaftaran" : "Daftar jadi agen sekarang"}
-        </Text>
+        <Text style={styles.primaryBtnText}>Daftar jadi agen sekarang</Text>
       </Pressable>
     </>
   );
@@ -313,7 +301,13 @@ function PendingView({ agent }: { agent: AgentInfo | null }) {
 
 /* ---------- Status: active ---------- */
 
-function ActiveView({ agent }: { agent: AgentInfo }) {
+function ActiveView({
+  agent,
+  name,
+}: {
+  agent: AgentInfo | null;
+  name: string;
+}) {
   return (
     <>
       <View style={styles.darkCard}>
@@ -323,20 +317,23 @@ function ActiveView({ agent }: { agent: AgentInfo }) {
             <Text style={styles.darkBadgeText}>AKTIF</Text>
           </View>
         </View>
-        <Text style={styles.darkTitleLg}>{agent.nama_lengkap}</Text>
+        <Text style={styles.darkTitleLg}>{name}</Text>
         <View style={styles.infoInner}>
           <View>
             <Text style={styles.infoLabel}>Kode agen</Text>
-            <Text style={styles.infoValue}>{agent.kode_agen ?? "-"}</Text>
+            <Text style={styles.infoValue}>{agent?.kode_agen ?? "-"}</Text>
           </View>
           <View>
             <Text style={styles.infoLabel}>Jenis agen</Text>
-            <Text style={styles.infoValue}>{agent.jenis_agen}</Text>
+            <Text style={styles.infoValue}>{agent?.jenis_agen ?? "-"}</Text>
           </View>
         </View>
       </View>
 
-      <Pressable style={styles.redCard} onPress={() => router.push("/")}>
+      <Pressable
+        style={styles.redCard}
+        onPress={() => router.push("/pengajuan")}
+      >
         <View style={styles.plusCircle}>
           <Ionicons name="add" size={26} color="#fff" />
         </View>
@@ -347,7 +344,7 @@ function ActiveView({ agent }: { agent: AgentInfo }) {
         <Ionicons name="chevron-forward" size={22} color="#fff" />
       </Pressable>
 
-      <KbaCard kbaNama={agent.kba_nama} kbaPhone={agent.kba_phone} />
+      <KbaCard kbaNama={agent?.kba_nama} kbaPhone={agent?.kba_phone} />
 
       <View style={styles.noticeBox}>
         <Ionicons name="call-outline" size={22} color="#111" />

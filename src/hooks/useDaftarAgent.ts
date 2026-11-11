@@ -8,7 +8,6 @@ import {
     visibleFields,
 } from "@/constants/daftarAgen";
 import {
-    submitAgent,
     submitAppAgent,
     uploadDokumenAgent,
 } from "@/services/agent";
@@ -157,7 +156,6 @@ export function useDaftarAgent() {
       setLoading(true);
       await submitAppAgent(payload);
       await uploadDokumenAgent(values.fotoKtp ?? "", values.selfie ?? "");
-      await submitAgent(payload.namaLengkap);
       await AsyncStorage.removeItem(DRAFT_KEY);
       Alert.alert(
         "Berhasil",

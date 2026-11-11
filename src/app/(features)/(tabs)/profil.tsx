@@ -97,9 +97,9 @@ export default function Profil() {
     );
   }
 
-  const { user, agent, status } = data;
-  const name = agent?.nama_lengkap || user.name || user.phone;
-  const isActive = status === "active";
+const { user, agent, status } = data;
+const name = agent?.nama_lengkap || user.name || user.phone;
+const isActive = status === "active";
 
   return (
     <ScrollView

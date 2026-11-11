@@ -3,7 +3,6 @@ import { authRequest } from "./auth";
 
 export type AgentStatus =
   | "none"
-  | "none_draft"
   | "pending"
   | "active"
   | "inactive_closing"
@@ -19,12 +18,11 @@ export type AgentInfo = {
   submitted_at: string | null;
 };
 
-// status pending di tabel agents (endpoint lama)
-export const submitAgent = (namaLengkap: string) =>
-  authRequest("/agent/submit", {
-    method: "POST",
-    body: { nama_lengkap: namaLengkap },
-  });
+export type AgentStatusResponse = {
+  status: AgentStatus;
+  user: { name: string; phone: string };
+  agent: AgentInfo | null;
+};
 
 // data lengkap ke tabel agent
 export const submitAppAgent = (values: Record<string, string>) =>
@@ -33,14 +31,23 @@ export const submitAppAgent = (values: Record<string, string>) =>
     body: values,
   });
 
-export type AgentStatusResponse = {
-  status: AgentStatus;
-  user: { name: string; phone: string };
-  agent: AgentInfo | null;
-};
-
-export const getAgentStatus = () =>
+  export const getAgentStatus = () =>
   authRequest("/agent/status") as Promise<AgentStatusResponse>;
+
+// foto dikirim sebagai base64
+export const uploadDokumenAgent = async (ktpUri: string, selfieUri: string) => {
+  const ktp = await FileSystem.readAsStringAsync(ktpUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  const selfie = await FileSystem.readAsStringAsync(selfieUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+
+  return authRequest("/agent/dokumen", {
+    method: "POST",
+    body: { ktp, selfie },
+  });
+};
 
 export type PengajuanItem = {
   id: number;
@@ -57,21 +64,6 @@ export type PengajuanPage = {
   current_page: number;
   last_page: number;
   total: number;
-};
-
-// foto dikirim sebagai base64
-export const uploadDokumenAgent = async (ktpUri: string, selfieUri: string) => {
-  const ktp = await FileSystem.readAsStringAsync(ktpUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-  const selfie = await FileSystem.readAsStringAsync(selfieUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-
-  return authRequest("/agent/dokumen", {
-    method: "POST",
-    body: { ktp, selfie },
-  });
 };
 
 export const getPengajuan = (page: number) =>
