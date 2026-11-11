@@ -138,7 +138,6 @@ export async function logout() {
   try {
     await authRequest("/logout", { method: "POST" });
   } catch {
-    // Token sudah habis, tidak apa-apa. Lanjut hapus lokal.
   }
   await forceLogout();
 }
