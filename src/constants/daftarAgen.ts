@@ -228,7 +228,6 @@ export const DAFTAR_STEPS: StepDef[] = [
         key: "kodePos",
         label: "Kode pos",
         type: "number",
-        required: true,
         hint: "Terisi otomatis dari kelurahan. Ubah jika tidak sesuai.",
       },
     ],

@@ -13,7 +13,6 @@ export async function saveSession(token: string, expiresInSeconds: number) {
   );
 }
 
-// Mengembalikan null kalau tidak ada token atau sudah lewat 5 menit
 export async function getSession(): Promise<{
   token: string;
   expiresAt: number;
@@ -31,5 +30,5 @@ export async function getSession(): Promise<{
 export async function clearSession() {
   await SecureStore.deleteItemAsync(TOKEN_KEY);
   await SecureStore.deleteItemAsync(EXPIRES_KEY);
-  await AsyncStorage.removeItem(DRAFT_KEY); // draf ikut terhapus saat logout
+  await AsyncStorage.removeItem(DRAFT_KEY);
 }
