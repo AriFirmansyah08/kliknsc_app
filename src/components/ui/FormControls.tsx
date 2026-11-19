@@ -1,19 +1,20 @@
 import type { FieldDef, FormValues } from "@/constants/daftarAgen";
-import { API_URL } from "@/services/auth";
+import { API_URL, getNipReferensi, type NipReferensi } from "@/services/auth";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker, {
-    DateTimePickerAndroid,
+  DateTimePickerAndroid,
 } from "@react-native-community/datetimepicker";
 import { useEffect, useMemo, useState } from "react";
 import {
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 import { Option, PickerSheet } from "./PickerSheet";
+
 
 const RED = "#E8311A";
 
@@ -221,8 +222,102 @@ export function ChoiceField({
   );
 }
 
-/* ---------- Satu field dari config ---------- */
+/* ---------- NIP referensi (dari API) ---------- */
 
+/* ---------- NIP referensi (dari API) ---------- */
+
+let nipCache: NipReferensi[] | null = null;
+
+const labelNip = (n: NipReferensi) => `${n.nip} - ${n.nama}`;
+
+// Ambil daftar NIP sekali, lalu dipakai ulang oleh semua field NIP/nama
+function useNipList() {
+  const [list, setList] = useState<NipReferensi[]>(nipCache ?? []);
+  const [loading, setLoading] = useState(!nipCache);
+
+  useEffect(() => {
+    if (nipCache) return;
+    getNipReferensi()
+      .then((res) => {
+        nipCache = res.data;
+        setList(res.data);
+      })
+      .catch(() => setList([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { list, loading };
+}
+
+export function NipField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const { list, loading } = useNipList();
+
+  const options = useMemo(
+    () => list.map((n) => ({ value: n.nip, label: labelNip(n) })),
+    [list],
+  );
+  const selectedItem = list.find((n) => n.nip === value);
+
+  return (
+    <>
+      <Pressable style={styles.box} onPress={() => setOpen(true)}>
+        <Text style={value ? styles.value : styles.placeholder}>
+          {selectedItem ? labelNip(selectedItem) : value || "Pilih NIP"}
+        </Text>
+        <Ionicons name="chevron-down" size={20} color="#333" />
+      </Pressable>
+      <PickerSheet
+        visible={open}
+        options={options}
+        loading={loading}
+        selected={value}
+        onClose={() => setOpen(false)}
+        onPick={(o) => {
+          setOpen(false);
+          onChange(o.value); // simpan NIP saja
+        }}
+      />
+    </>
+  );
+}
+
+function ReadonlyField({
+  value,
+  placeholder,
+}: {
+  value: string;
+  placeholder?: string;
+}) {
+  return (
+    <View style={[styles.box, styles.readonly]}>
+      <Text style={value ? styles.value : styles.placeholder}>
+        {value || placeholder}
+      </Text>
+    </View>
+  );
+}
+
+// Nama KBA diambil dari daftar NIP berdasarkan NIP yang dipilih
+function NamaKbaField({
+  nip,
+  placeholder,
+}: {
+  nip: string;
+  placeholder?: string;
+}) {
+  const { list } = useNipList();
+  const nama = list.find((n) => n.nip === nip)?.nama ?? "";
+  return <ReadonlyField value={nama} placeholder={placeholder} />;
+}
+
+/* ---------- Satu field dari config ---------- */
 export function FormField({
   field,
   value,
@@ -235,7 +330,31 @@ export function FormField({
   values: FormValues;
   onChange: (v: string) => void;
   onPick: (o: Option) => void;
+  onNipPick?: (item: NipReferensi) => void;
 }) {
+  if (field.type === "nip") {
+    return (
+      <Labeled label={field.label} hint={field.hint}>
+        <NipField value={value} onChange={onChange} />
+      </Labeled>
+    );
+  }
+
+  if (field.type === "readonly") {
+    return (
+      <Labeled label={field.label} hint={field.hint}>
+        {field.key === "namaKba" ? (
+          <NamaKbaField
+            nip={values.nip ?? ""}
+            placeholder={field.placeholder}
+          />
+        ) : (
+          <ReadonlyField value={value} placeholder={field.placeholder} />
+        )}
+      </Labeled>
+    );
+  }
+
   if (field.type === "remote" && field.source) {
     const parentKode = field.source.parentKey
       ? values[field.source.parentKey]
@@ -381,4 +500,5 @@ const styles = StyleSheet.create({
   choiceActive: { backgroundColor: "#1F1F1F", borderColor: "#1F1F1F" },
   choiceText: { fontSize: 15, fontWeight: "700", color: "#111" },
   choiceTextActive: { color: "#fff" },
+  readonly: { backgroundColor: "#F2F2F2" },
 });

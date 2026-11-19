@@ -1,14 +1,23 @@
 import { router } from "expo-router";
 import { clearSession, getSession, saveSession } from "./session";
-// export const API_URL = "http://192.168.1.6:8000/api";
+
+//export const API_URL = "http://192.168.1.19:8000/api";
 export const API_URL = "http://10.79.240.84:8000/api";
 // export const API_URL = "http://172.26.86.65:8000/api";
+
 
 const SESSION_EXPIRED = "SESSION_EXPIRED";
 
 export function isSessionExpired(e: unknown) {
   return (e as Error)?.message === SESSION_EXPIRED;
 }
+
+export type NipReferensi = {
+  nip: string;
+  nama: string;
+  cabang: string;
+  jabatan: string;
+};
 
 async function forceLogout() {
   await clearSession();
@@ -111,6 +120,24 @@ export function resetPassword(phone: string, otp: string, password: string) {
 
 export function cekNoTelpAgen(noTelp: string): Promise<{ ada: boolean }> {
   return post("/agent/cek-nomor", { no_telp: noTelp }, "Gagal mengecek nomor");
+}
+
+async function get(path: string, fallbackError: string) {
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "GET",
+    headers: { Accept: "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok) {
+    const err: any = new Error(data.message ?? fallbackError);
+    err.status = res.status;
+    throw err;
+  }
+  return data;
+}
+
+export function getNipReferensi(): Promise<{ data: NipReferensi[] }> {
+  return get("/agent/nip-referensi", "Gagal memuat daftar NIP");
 }
 
 export async function verifikasiAgen(

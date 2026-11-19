@@ -1,22 +1,24 @@
 import { DokumenStep } from "@/components/ui/DokumenStep";
 import { FormField } from "@/components/ui/FormControls";
-
 import {
-    DAFTAR_STEPS,
-    DOC_STEP,
-    REVIEW_STEP,
-    visibleFields,
+  DAFTAR_STEPS,
+  DOC_STEP,
+  REVIEW_STEP,
+  groupFields,
+  visibleFields,
 } from "@/constants/daftarAgen";
+
 import { Ionicons } from "@expo/vector-icons";
 import { usePreventScreenCapture } from "expo-screen-capture";
 import {
-    ActivityIndicator,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
+
 import { useDaftarAgent } from "../../../hooks/useDaftarAgent";
 
 const RED = "#E8311A";
@@ -112,15 +114,26 @@ export default function DaftarAgen() {
           <>
             <Text style={styles.title}>{current.title}</Text>
             <Text style={styles.desc}>{current.desc}</Text>
-            {visibleFields(current, values).map((f) => (
-              <FormField
-                key={f.key}
-                field={f}
-                value={values[f.key] ?? ""}
-                values={values}
-                onChange={(v) => setField(f.key, v)}
-                onPick={(item) => pickRemote(f.key, item)}
-              />
+            {groupFields(visibleFields(current, values)).map((group) => (
+              <View
+                key={group[0].key}
+                style={group.length > 1 ? styles.rowFields : undefined}
+              >
+                {group.map((f) => (
+                  <View
+                    key={f.key}
+                    style={group.length > 1 ? styles.half : undefined}
+                  >
+                    <FormField
+                      field={f}
+                      value={values[f.key] ?? ""}
+                      values={values}
+                      onChange={(v) => setField(f.key, v)}
+                      onPick={(item) => pickRemote(f.key, item)}
+                    />
+                  </View>
+                ))}
+              </View>
             ))}
           </>
         )}
@@ -222,4 +235,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   primaryBtnText: { color: "#fff", fontSize: 16, fontWeight: "800" },
+
+  rowFields: { flexDirection: "row", gap: 12 },
+  half: { flex: 1 },
 });

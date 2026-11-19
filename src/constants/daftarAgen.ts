@@ -7,7 +7,9 @@ export type FieldType =
   | "date"
   | "choice"
   | "checkbox"
-  | "photo";
+  | "photo"
+  | "nip"
+  | "readonly";
 
 export type FormValues = Record<string, string>;
 export const DRAFT_KEY = "draft_daftar_agen";
@@ -22,6 +24,7 @@ export type FieldDef = {
   hint?: string;
   maxLength?: number;
   lowercase?: boolean;
+  row?: string;
   showIf?: (v: FormValues) => boolean;
   validate?: (v: string) => string | null;
   source?: { path: string; param?: string; parentKey?: string };
@@ -73,9 +76,15 @@ export const DAFTAR_STEPS: StepDef[] = [
       {
         key: "nip",
         label: "NIP referensi",
-        type: "number",
+        type: "nip",
         required: true,
         hint: "Tanyakan NIP ke KBA kamu.",
+      },
+      {
+        key: "namaKba",
+        label: "Nama KBA",
+        type: "readonly",
+        placeholder: "Otomatis terisi dari NIP",
       },
       {
         key: "nik",
@@ -117,6 +126,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         type: "select",
         options: ["O", "A", "B", "AB", "TIDAK TAHU"],
         required: true,
+        row: "gol-warga",
       },
       {
         key: "kewarganegaraan",
@@ -124,6 +134,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         type: "select",
         options: ["WNI", "WNA"],
         required: true,
+        row: "gol-warga",
       },
       {
         key: "agama",
@@ -138,6 +149,7 @@ export const DAFTAR_STEPS: StepDef[] = [
           "KONGHUCU",
           "LAIN - LAIN",
         ],
+        row: "status",
         required: true,
       },
       {
@@ -145,6 +157,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         label: "Status perkawinan",
         type: "select",
         options: ["Belum kawin", "Kawin", "Cerai hidup", "DUDA", "JANDA"],
+        row: "status",
         required: true,
       },
       {
@@ -174,6 +187,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         type: "number",
         required: true,
         maxLength: 3,
+        row: "rtrw",
         validate: rt3Rule("RT"),
       },
       {
@@ -182,6 +196,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         type: "number",
         required: true,
         maxLength: 3,
+        row: "rtrw",
         validate: rt3Rule("RW"),
       },
       {
@@ -217,7 +232,6 @@ export const DAFTAR_STEPS: StepDef[] = [
         key: "kelurahan",
         label: "Kelurahan / desa",
         type: "remote",
-        required: true,
         source: {
           path: "/wilayah/kelurahan",
           param: "kecamatan",
@@ -228,6 +242,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         key: "kodePos",
         label: "Kode pos",
         type: "number",
+        maxLength: 5,
         hint: "Terisi otomatis dari kelurahan. Ubah jika tidak sesuai.",
       },
     ],
@@ -339,3 +354,13 @@ export const REVIEW_STEP = DAFTAR_STEPS.length;
 
 export const visibleFields = (step: StepDef, values: FormValues) =>
   step.fields.filter((f) => !f.showIf || f.showIf(values));
+
+export const groupFields = (fields: FieldDef[]) => {
+  const groups: FieldDef[][] = [];
+  for (const f of fields) {
+    const last = groups[groups.length - 1];
+    if (f.row && last && last[0].row === f.row) last.push(f);
+    else groups.push([f]);
+  }
+  return groups;
+};
