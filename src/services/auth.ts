@@ -1,10 +1,9 @@
 import { router } from "expo-router";
 import { clearSession, getSession, saveSession } from "./session";
 
-//export const API_URL = "http://192.168.1.19:8000/api";
-export const API_URL = "http://10.79.240.84:8000/api";
+// export const API_URL = "http://192.168.1.17:8000/api";
+export const API_URL = "http://10.92.117.84:8000/api";
 // export const API_URL = "http://172.26.86.65:8000/api";
-
 
 const SESSION_EXPIRED = "SESSION_EXPIRED";
 
@@ -44,7 +43,7 @@ export async function authRequest(
   path: string,
   options: { method?: "GET" | "POST"; body?: object } = {},
 ) {
-  const session = await getSession(); // null kalau sudah lewat 5 menit
+  const session = await getSession();
   if (!session) {
     await forceLogout();
     throw new Error(SESSION_EXPIRED);

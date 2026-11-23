@@ -2,15 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useState } from "react";
 import {
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
+import { kirimPengajuanM2w } from "../../../services/pengajuan";
 
 const RED = "#E8311A";
 
@@ -96,37 +99,41 @@ function Field({
   );
 }
 
-function SelectRow({
-  label,
-  value,
-  placeholder,
-  onPress,
-}: {
-  label: string;
-  value: string;
-  placeholder: string;
-  onPress?: () => void;
-}) {
-  return (
-    <View style={styles.field}>
-      <Text style={styles.label}>{label}</Text>
-      <Pressable
-        style={({ pressed }) => [styles.select, pressed && { opacity: 0.85 }]}
-        onPress={onPress}
-      >
-        <Text style={value ? styles.selectValue : styles.selectPlaceholder}>
-          {value || placeholder}
-        </Text>
-        <Ionicons name="chevron-down" size={18} color="#666" />
-      </Pressable>
-    </View>
-  );
-}
-
 export default function M2wScreen() {
   const [v, setV] = useState<Values>(INITIAL);
+  const [kirim, setKirim] = useState(false);
   const set = (key: keyof Values) => (val: string) =>
     setV((prev) => ({ ...prev, [key]: val }));
+
+  async function simpan() {
+    if (kirim) return;
+
+    setKirim(true);
+    try {
+      await kirimPengajuanM2w({
+        nik: v.ktp,
+        namaLengkap: v.nama,
+        noHp: v.noHp,
+        alamat: v.alamat,
+        rt: v.rt,
+        rw: v.rw,
+        provinsi: v.provinsi,
+        kota: v.kota,
+        kecamatan: v.kecamatan,
+        kelurahan: v.kelurahan,
+        sumberPk: v.sumberPk,
+        pilSumber: v.pilihanSumber,
+      });
+
+      Alert.alert("Berhasil", "Pengajuan M2W terkirim.", [
+        { text: "OK", onPress: () => router.back() },
+      ]);
+    } catch (e: any) {
+      Alert.alert("Gagal", e?.message ?? "Terjadi kesalahan");
+    } finally {
+      setKirim(false);
+    }
+  }
 
   return (
     <KeyboardAvoidingView
@@ -197,38 +204,44 @@ export default function M2wScreen() {
               />
             </View>
           </View>
-          <SelectRow
+          <Field
             label="Provinsi"
             value={v.provinsi}
-            placeholder="Pilih provinsi"
+            onChangeText={set("provinsi")}
+            placeholder="Contoh: JAWA BARAT"
           />
-          <SelectRow
+          <Field
             label="Kota / Kabupaten"
             value={v.kota}
-            placeholder="Pilih kota"
+            onChangeText={set("kota")}
+            placeholder="Contoh: BANDA ACEH"
           />
-          <SelectRow
+          <Field
             label="Kecamatan"
             value={v.kecamatan}
-            placeholder="Pilih kecamatan"
+            onChangeText={set("kecamatan")}
+            placeholder="Contoh: KUTA ALAM"
           />
-          <SelectRow
+          <Field
             label="Kelurahan"
             value={v.kelurahan}
-            placeholder="Pilih kelurahan"
+            onChangeText={set("kelurahan")}
+            placeholder="Contoh: LAMPINEUNG"
           />
         </Section>
 
         <Section title="Sumber">
-          <SelectRow
+          <Field
             label="Sumber PK"
             value={v.sumberPk}
-            placeholder="Pilih sumber"
+            onChangeText={set("sumberPk")}
+            placeholder="Contoh: OFFLINE"
           />
-          <SelectRow
+          <Field
             label="Pilihan sumber"
             value={v.pilihanSumber}
-            placeholder="Pilih pilihan"
+            onChangeText={set("pilihanSumber")}
+            placeholder="Contoh: REFERENSI KELUARGA/TEMAN"
           />
         </Section>
 
@@ -241,12 +254,18 @@ export default function M2wScreen() {
         </View>
 
         <Pressable
+          onPress={simpan}
+          disabled={kirim}
           style={({ pressed }) => [
             styles.primaryBtn,
-            pressed && { opacity: 0.9 },
+            (pressed || kirim) && { opacity: 0.9 },
           ]}
         >
-          <Text style={styles.primaryBtnText}>Simpan</Text>
+          {kirim ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.primaryBtnText}>Simpan</Text>
+          )}
         </Pressable>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -263,17 +282,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   headerTitle: { fontSize: 20, fontWeight: "800", color: "#111" },
-  productBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 20,
-  },
-  productTitle: { fontSize: 16, fontWeight: "700", color: "#111" },
-  productMeta: { fontSize: 12, color: "#666", marginTop: 2 },
   section: { marginBottom: 20 },
   sectionTitle: {
     fontSize: 13,
@@ -297,19 +305,6 @@ const styles = StyleSheet.create({
   },
   inputMultiline: { minHeight: 80, textAlignVertical: "top" },
   row: { flexDirection: "row", gap: 12 },
-  select: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#FAFAFA",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E0E0E0",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  selectValue: { fontSize: 15, color: "#111" },
-  selectPlaceholder: { fontSize: 15, color: "#999" },
   note: {
     flexDirection: "row",
     alignItems: "flex-start",

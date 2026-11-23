@@ -15,7 +15,6 @@ import {
 } from "react-native";
 import { Option, PickerSheet } from "./PickerSheet";
 
-
 const RED = "#E8311A";
 
 /* ---------- Dropdown statis ---------- */
@@ -61,31 +60,40 @@ export function SelectField({
 export function RemoteSelectField({
   value,
   path,
-  param,
-  parentKode,
+  query,
   onPick,
 }: {
   value: string;
   path: string;
-  param?: string;
-  parentKode?: string;
+  query: Record<string, string>;
   onPick: (o: Option) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [options, setOptions] = useState<Option[]>([]);
   const [loading, setLoading] = useState(false);
-  const disabled = !!param && !parentKode;
+
+  // disabled jika ada induk yang belum dipilih; provinsi tidak punya query, jadi tetap aktif
+  const disabled = Object.values(query).some((v) => !v);
+  const qsString = new URLSearchParams(query).toString();
+  const queryKey = JSON.stringify(query);
 
   useEffect(() => {
     if (!open || disabled) return;
-    const qs = param ? `?${param}=${encodeURIComponent(parentKode ?? "")}` : "";
+    const url = `${API_URL}${path}${qsString ? `?${qsString}` : ""}`;
     setLoading(true);
-    fetch(`${API_URL}${path}${qs}`)
-      .then((r) => r.json())
-      .then((data: Option[]) => setOptions(data))
+    fetch(url, { headers: { Accept: "application/json" } })
+      .then(async (r) => {
+        const data = await r.json();
+        if (!r.ok || !Array.isArray(data)) {
+          throw new Error(data?.message ?? "Gagal memuat data");
+        }
+        return data as Option[];
+      })
+      .then(setOptions)
       .catch(() => setOptions([]))
       .finally(() => setLoading(false));
-  }, [open, path, param, parentKode, disabled]);
+    // queryKey dipakai agar effect tidak jalan ulang setiap render
+  }, [open, path, queryKey, disabled]);
 
   return (
     <>
@@ -224,8 +232,6 @@ export function ChoiceField({
 
 /* ---------- NIP referensi (dari API) ---------- */
 
-/* ---------- NIP referensi (dari API) ---------- */
-
 let nipCache: NipReferensi[] | null = null;
 
 const labelNip = (n: NipReferensi) => `${n.nip} - ${n.nama}`;
@@ -281,7 +287,7 @@ export function NipField({
         onClose={() => setOpen(false)}
         onPick={(o) => {
           setOpen(false);
-          onChange(o.value); // simpan NIP saja
+          onChange(o.value);
         }}
       />
     </>
@@ -304,7 +310,6 @@ function ReadonlyField({
   );
 }
 
-// Nama KBA diambil dari daftar NIP berdasarkan NIP yang dipilih
 function NamaKbaField({
   nip,
   placeholder,
@@ -317,7 +322,6 @@ function NamaKbaField({
   return <ReadonlyField value={nama} placeholder={placeholder} />;
 }
 
-/* ---------- Satu field dari config ---------- */
 export function FormField({
   field,
   value,
@@ -356,16 +360,18 @@ export function FormField({
   }
 
   if (field.type === "remote" && field.source) {
-    const parentKode = field.source.parentKey
-      ? values[field.source.parentKey]
-      : undefined;
+    const query: Record<string, string> = Object.fromEntries(
+      Object.entries(field.source.query ?? {}).map(([param, key]) => [
+        param,
+        values[key] ?? "",
+      ]),
+    );
     return (
       <Labeled label={field.label} hint={field.hint}>
         <RemoteSelectField
           value={value}
           path={field.source.path}
-          param={field.source.param}
-          parentKode={parentKode}
+          query={query}
           onPick={onPick}
         />
       </Labeled>

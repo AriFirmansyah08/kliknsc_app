@@ -24,7 +24,7 @@ import { useDaftarAgent } from "../../../hooks/useDaftarAgent";
 const RED = "#E8311A";
 
 export default function DaftarAgen() {
-  usePreventScreenCapture(); // blokir screenshot dan rekam layar
+  usePreventScreenCapture();
 
   const {
     step,

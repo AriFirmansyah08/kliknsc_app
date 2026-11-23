@@ -27,7 +27,11 @@ export type FieldDef = {
   row?: string;
   showIf?: (v: FormValues) => boolean;
   validate?: (v: string) => string | null;
-  source?: { path: string; param?: string; parentKey?: string };
+  source?: {
+    path: string;
+    parentKey?: string;
+    query?: Record<string, string>; // nama param API -> key di values
+  };
 };
 
 export type StepDef = {
@@ -91,7 +95,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         label: "NIK",
         type: "number",
         required: true,
-        maxLength: 17,
+        maxLength: 16,
         validate: nikRule,
       },
     ],
@@ -147,7 +151,7 @@ export const DAFTAR_STEPS: StepDef[] = [
           "HINDU",
           "BUDHA",
           "KONGHUCU",
-          "LAIN - LAIN",
+          "LAIN-LAIN",
         ],
         row: "status",
         required: true,
@@ -213,8 +217,8 @@ export const DAFTAR_STEPS: StepDef[] = [
         required: true,
         source: {
           path: "/wilayah/kota",
-          param: "provinsi",
           parentKey: "provinsiKode",
+          query: { provinsi: "provinsiKode" },
         },
       },
       {
@@ -224,8 +228,8 @@ export const DAFTAR_STEPS: StepDef[] = [
         required: true,
         source: {
           path: "/wilayah/kecamatan",
-          param: "kota",
           parentKey: "kotaKode",
+          query: { provinsi: "provinsiKode", kota: "kotaKode" },
         },
       },
       {
@@ -234,8 +238,12 @@ export const DAFTAR_STEPS: StepDef[] = [
         type: "remote",
         source: {
           path: "/wilayah/kelurahan",
-          param: "kecamatan",
           parentKey: "kecamatanKode",
+          query: {
+            provinsi: "provinsiKode",
+            kota: "kotaKode",
+            kecamatan: "kecamatanKode",
+          },
         },
       },
       {
@@ -306,7 +314,7 @@ export const DAFTAR_STEPS: StepDef[] = [
         required: true,
         source: {
           path: "/dtdiri/subpekerjaan",
-          param: "pekerjaan",
+          query: { pekerjaan: "pekerjaanKode" },
           parentKey: "pekerjaanKode",
         },
       },
