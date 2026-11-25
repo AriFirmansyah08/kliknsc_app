@@ -13,9 +13,15 @@ import {
   TextInput,
   View,
 } from "react-native";
+import {
+  RemoteSelectField,
+  SelectField,
+} from "../../../components/ui/FormControls";
 import { kirimPengajuanM2w } from "../../../services/pengajuan";
 
 const RED = "#E8311A";
+
+type Option = { value: string; label: string };
 
 type Values = {
   ktp: string;
@@ -25,9 +31,13 @@ type Values = {
   rt: string;
   rw: string;
   provinsi: string;
+  provinsiKode: string;
   kota: string;
+  kotaKode: string;
   kecamatan: string;
+  kecamatanKode: string;
   kelurahan: string;
+  kelurahanKode: string;
   sumberPk: string;
   pilihanSumber: string;
 };
@@ -40,11 +50,30 @@ const INITIAL: Values = {
   rt: "",
   rw: "",
   provinsi: "",
+  provinsiKode: "",
   kota: "",
+  kotaKode: "",
   kecamatan: "",
+  kecamatanKode: "",
   kelurahan: "",
+  kelurahanKode: "",
   sumberPk: "",
   pilihanSumber: "",
+};
+
+const SUMBER_OPTIONS = ["OFFLINE", "ONLINE"];
+
+const PILIHAN_SUMBER: Record<string, string[]> = {
+  OFFLINE: ["PENAWARAN LANGSUNG KE KONSUMEN", "REFERENSI KELUARGA/ TEMAN"],
+  ONLINE: [
+    "IKLAN BERBAYAR DI FB/IG",
+    "IKLAN MARKETPLACE DI FB",
+    "GROUP FACEBOOK JUAL-BELI",
+    "STORY/ BROADCAST WA",
+    "POST ATAU STORY FB",
+    "POST ATAU STORY IG",
+    "POST ATAU STORY TIKTOK",
+  ],
 };
 
 function Section({
@@ -102,8 +131,39 @@ function Field({
 export default function M2wScreen() {
   const [v, setV] = useState<Values>(INITIAL);
   const [kirim, setKirim] = useState(false);
+
   const set = (key: keyof Values) => (val: string) =>
     setV((prev) => ({ ...prev, [key]: val }));
+
+  // Simpan nama (untuk tampilan dan payload) dan kode (untuk query API).
+  // Wilayah di bawah field yang dipilih ikut dikosongkan.
+  function pilih(
+    field: "provinsi" | "kota" | "kecamatan" | "kelurahan",
+    o: Option,
+  ) {
+    setV((prev) => {
+      const next: any = {
+        ...prev,
+        [field]: o.label,
+        [`${field}Kode`]: o.value,
+      };
+      const urutan = ["provinsi", "kota", "kecamatan", "kelurahan"];
+      for (const f of urutan.slice(urutan.indexOf(field) + 1)) {
+        next[f] = "";
+        next[`${f}Kode`] = "";
+      }
+      return next as Values;
+    });
+  }
+
+  // Ganti sumber: pilihan sumber ikut dikosongkan
+  function pilihSumber(val: string) {
+    setV((prev) => ({ ...prev, sumberPk: val, pilihanSumber: "" }));
+  }
+
+  function pilihPilihanSumber(val: string) {
+    setV((prev) => ({ ...prev, pilihanSumber: val }));
+  }
 
   async function simpan() {
     if (kirim) return;
@@ -204,45 +264,72 @@ export default function M2wScreen() {
               />
             </View>
           </View>
-          <Field
-            label="Provinsi"
-            value={v.provinsi}
-            onChangeText={set("provinsi")}
-            placeholder="Contoh: JAWA BARAT"
-          />
-          <Field
-            label="Kota / Kabupaten"
-            value={v.kota}
-            onChangeText={set("kota")}
-            placeholder="Contoh: BANDA ACEH"
-          />
-          <Field
-            label="Kecamatan"
-            value={v.kecamatan}
-            onChangeText={set("kecamatan")}
-            placeholder="Contoh: KUTA ALAM"
-          />
-          <Field
-            label="Kelurahan"
-            value={v.kelurahan}
-            onChangeText={set("kelurahan")}
-            placeholder="Contoh: LAMPINEUNG"
-          />
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Provinsi</Text>
+            <RemoteSelectField
+              value={v.provinsi}
+              path="/wilayah/provinsi"
+              query={{}}
+              onPick={(o) => pilih("provinsi", o)}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Kota / Kabupaten</Text>
+            <RemoteSelectField
+              value={v.kota}
+              path="/wilayah/kota"
+              query={{ provinsi: v.provinsiKode }}
+              onPick={(o) => pilih("kota", o)}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Kecamatan</Text>
+            <RemoteSelectField
+              value={v.kecamatan}
+              path="/wilayah/kecamatan"
+              query={{ provinsi: v.provinsiKode, kota: v.kotaKode }}
+              onPick={(o) => pilih("kecamatan", o)}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Kelurahan</Text>
+            <RemoteSelectField
+              value={v.kelurahan}
+              path="/wilayah/kelurahan"
+              query={{
+                provinsi: v.provinsiKode,
+                kota: v.kotaKode,
+                kecamatan: v.kecamatanKode,
+              }}
+              onPick={(o) => pilih("kelurahan", o)}
+            />
+          </View>
         </Section>
 
         <Section title="Sumber">
-          <Field
-            label="Sumber PK"
-            value={v.sumberPk}
-            onChangeText={set("sumberPk")}
-            placeholder="Contoh: OFFLINE"
-          />
-          <Field
-            label="Pilihan sumber"
-            value={v.pilihanSumber}
-            onChangeText={set("pilihanSumber")}
-            placeholder="Contoh: REFERENSI KELUARGA/TEMAN"
-          />
+          <View style={styles.field}>
+            <Text style={styles.label}>Sumber PK</Text>
+            <SelectField
+              value={v.sumberPk}
+              options={SUMBER_OPTIONS}
+              placeholder="Pilih sumber"
+              onChange={pilihSumber}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.label}>Pilihan sumber</Text>
+            <SelectField
+              value={v.pilihanSumber}
+              options={PILIHAN_SUMBER[v.sumberPk] ?? []}
+              placeholder={v.sumberPk ? "Pilih pilihan" : "Pilih sumber dulu"}
+              onChange={pilihPilihanSumber}
+            />
+          </View>
         </Section>
 
         <View style={styles.note}>

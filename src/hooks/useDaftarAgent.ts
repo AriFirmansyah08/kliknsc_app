@@ -1,16 +1,13 @@
 import {
-    DAFTAR_STEPS,
-    DOC_STEP,
-    FieldDef,
-    FormValues,
-    REVIEW_STEP,
-    emptyValues,
-    visibleFields,
+  DAFTAR_STEPS,
+  DOC_STEP,
+  FieldDef,
+  FormValues,
+  REVIEW_STEP,
+  emptyValues,
+  visibleFields,
 } from "@/constants/daftarAgen";
-import {
-    submitAppAgent,
-    uploadDokumenAgent,
-} from "@/services/agent";
+import { submitAppAgent, uploadDokumenAgent } from "@/services/agent";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import { useEffect, useState } from "react";
@@ -145,10 +142,15 @@ export function useDaftarAgent() {
 
   const submit = async () => {
     // kirim field yang tampil, kecuali foto (foto dikirim terpisah)
+    // field dari API dikirim kodenya, bukan labelnya
     const payload: FormValues = {};
     DAFTAR_STEPS.forEach((s) =>
       visibleFields(s, values).forEach((f) => {
-        if (f.type !== "photo") payload[f.key] = values[f.key] ?? "";
+        if (f.type === "photo") return;
+        payload[f.key] =
+          f.type === "remote"
+            ? (values[`${f.key}Kode`] ?? "")
+            : (values[f.key] ?? "");
       }),
     );
 

@@ -236,7 +236,6 @@ let nipCache: NipReferensi[] | null = null;
 
 const labelNip = (n: NipReferensi) => `${n.nip} - ${n.nama}`;
 
-// Ambil daftar NIP sekali, lalu dipakai ulang oleh semua field NIP/nama
 function useNipList() {
   const [list, setList] = useState<NipReferensi[]>(nipCache ?? []);
   const [loading, setLoading] = useState(!nipCache);
