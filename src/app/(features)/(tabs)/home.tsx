@@ -2,20 +2,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Linking,
-    Pressable,
-    RefreshControl,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  Alert,
+  Linking,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import {
-    AgentInfo,
-    AgentStatusResponse,
-    getAgentStatus,
+  AgentInfo,
+  AgentStatusResponse,
+  getAgentStatus,
 } from "../../../services/agent";
 
 const RED = "#E8311A";
@@ -56,6 +56,20 @@ export default function Home() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Selama menunggu verifikasi, cek status berkala agar hasil dari KSystem langsung tampil.
+  const currentStatus = data?.status;
+  useEffect(() => {
+    if (currentStatus !== "pending") return;
+    const timer = setInterval(async () => {
+      try {
+        setData(await getAgentStatus());
+      } catch {
+        // Gangguan jaringan sesaat diabaikan, dicoba lagi pada putaran berikutnya.
+      }
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [currentStatus]);
 
   if (!data && !error) {
     return (
@@ -365,8 +379,6 @@ function ActiveView({
     </>
   );
 }
-
-/* ---------- Status: inactive / closing / rejected ---------- */
 
 function StatusCard({
   icon,
