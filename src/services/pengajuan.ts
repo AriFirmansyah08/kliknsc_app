@@ -18,3 +18,7 @@ export type PengajuanM2wInput = {
 export function kirimPengajuanM2w(input: PengajuanM2wInput) {
   return authRequest("/pengajuan/m2w", { method: "POST", body: input });
 }
+
+export function kirimPengajuanHmc(input: PengajuanM2wInput) {
+  return authRequest("/pengajuan/hmc", { method: "POST", body: input });
+}

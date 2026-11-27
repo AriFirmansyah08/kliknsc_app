@@ -135,8 +135,6 @@ export default function M2wScreen() {
   const set = (key: keyof Values) => (val: string) =>
     setV((prev) => ({ ...prev, [key]: val }));
 
-  // Simpan nama (untuk tampilan dan payload) dan kode (untuk query API).
-  // Wilayah di bawah field yang dipilih ikut dikosongkan.
   function pilih(
     field: "provinsi" | "kota" | "kecamatan" | "kelurahan",
     o: Option,
